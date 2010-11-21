@@ -29,10 +29,6 @@ expect
 ----------------
 <pre><code>  "ExpectActor" should "enable synchronous assertion of specific messages" in {
     echoService ! "hello"
-    expectActor expect "hello"
-
-    // ? is shorthand for expect
-    echoService ! "hello"
     expectActor ? "hello"
   }
 </code></pre>
@@ -41,29 +37,13 @@ expectNothing
 -------------------
 <pre><code>  it should "enable explicit assertion of no messages of any kind" in {
     discardService ! "hello"
-    expectActor.expectNothing
-
-    discardService ! "hello"
-    expectActor expect nothing
-
-    discardService ! "hello"
     expectActor ? nothing
   }
 </code></pre>
 
 expectMultiple (ordered)
 ------------------------
-<pre><code>  it should "enable assertion of multiple messages received in specific order (using Seq)" in {
-    echoService ! "hello"
-    echoService ! "world"
-    expectActor expectMultiple List("hello", "world")
-
-    // ?* is shorthand for expectMultiple
-    echoService ! "hello"
-    echoService ! "world"
-    expectActor ?* List("hello", "world")
-
-    // you can also use the regular expect, using the inOrder qualifier
+<pre><code>  it should "enable assertion of multiple messages received in specific order" in {
     echoService ! "hello"
     echoService ! "world"
     expectActor ? inOrder("hello", "world")
@@ -72,16 +52,7 @@ expectMultiple (ordered)
 
 expectMultiple (unordered)
 --------------------------
-<pre><code>  it should "enable assertion of multiple messages received, regardless of order (using Set)" in {
-    echoService ! "hello"
-    echoService ! "world"
-    expectActor ?* Set("hello", "world")
-
-    echoService ! "hello"
-    echoService ! "world"
-    expectActor ?* Set("world", "hello")
-
-    // you can also use regular expect, using the anyOrder qualifier
+<pre><code>  it should "enable assertion of multiple messages received in any order" in {
     echoService ! "hello"
     echoService ! "world"
     expectActor ? anyOrder("world", "hello")
@@ -91,10 +62,6 @@ expectMultiple (unordered)
 expectAny
 ---------
 <pre><code>  it should "enable assertion of messages of a specific class" in {
-    echoService ! "hello"
-    expectActor expectAny classOf[String]
-
-    // ?? is shorthande for expectAny
     echoService ! "hello"
     expectActor ?? classOf[String]
   }
