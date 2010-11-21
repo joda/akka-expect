@@ -62,6 +62,11 @@ expectMultiple (ordered)
     echoService ! "hello"
     echoService ! "world"
     expectActor ?* List("hello", "world")
+
+    // you can also use the regular expect, using the inOrder qualifier
+    echoService ! "hello"
+    echoService ! "world"
+    expectActor ? inOrder("hello", "world")
   }
 </code></pre>
 
@@ -75,6 +80,11 @@ expectMultiple (unordered)
     echoService ! "hello"
     echoService ! "world"
     expectActor ?* Set("world", "hello")
+
+    // you can also use regular expect, using the anyOrder qualifier
+    echoService ! "hello"
+    echoService ! "world"
+    expectActor ? anyOrder("world", "hello")
   }
 </code></pre>
 

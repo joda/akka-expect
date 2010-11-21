@@ -94,6 +94,11 @@ class ExpectActorSpec extends FlatSpec with ShouldMatchers with BeforeAndAfterEa
     echoService ! "hello"
     echoService ! "world"
     expectActor ?* List("hello", "world")
+
+    // you can also use the regular expect, using the inOrder qualifier
+    echoService ! "hello"
+    echoService ! "world"
+    expectActor ? inOrder("hello", "world")
   }
 
   it should "raise an assertion error when expect multiple messages are received out of order" in {
@@ -119,6 +124,11 @@ class ExpectActorSpec extends FlatSpec with ShouldMatchers with BeforeAndAfterEa
     echoService ! "hello"
     echoService ! "world"
     expectActor ?* Set("world", "hello")
+
+    // you can also use regular expect, using the anyOrder qualifier
+    echoService ! "hello"
+    echoService ! "world"
+    expectActor ? anyOrder("world", "hello")
   }
   
   it should "raise a timeout exception when expectMultiple(Set) does not receive all expected messages" in {
