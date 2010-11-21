@@ -6,8 +6,7 @@ akka-expect is an [expect](http://expect.sf.net) mimic to facilitate easy testin
 beforeEach
 ----------
 In order to demonstrate the features of akka-expect we need the following two actors:
-<pre><code>
-  class EchoService extends Actor {
+<pre><code>  class EchoService extends Actor {
     override def receive = {
       case msg => self reply msg
     }
@@ -20,18 +19,15 @@ In order to demonstrate the features of akka-expect we need the following two ac
   }
 </code></pre>
 The expectActor is created using
-<pre><code>
-  val expectActor = actorOf[ExpectActor].start
+<pre><code>val expectActor = actorOf[ExpectActor].start
 </code></pre>
-In order to avoid specifying the expectActor explicitly every time, we declare it implicit:
-<pre><code>
-  implicit val senderOption = Option(expectActor)
+In order to avoid specifying the expectActor as a sender every time, we declare it implicit:
+<pre><code>implicit val senderOption = Option(expectActor)
 </code></pre>
 
 expect
 ----------------
-<pre><code>
-  "ExpectActor" should "enable synchronous assertion of specific messages" in {
+<pre><code>  "ExpectActor" should "enable synchronous assertion of specific messages" in {
     echoService ! "hello"
     expectActor expect "hello"
 
@@ -43,8 +39,7 @@ expect
 
 expectNothing
 -------------------
-<pre><code>
-  it should "enable explicit assertion of no messages of any kind" in {
+<pre><code>  it should "enable explicit assertion of no messages of any kind" in {
     discardService ! "hello"
     expectActor.expectNothing
 
@@ -58,8 +53,7 @@ expectNothing
 
 expectMultiple (ordered)
 ------------------------
-<pre><code>
-  it should "enable assertion of multiple messages received in specific order (using Seq)" in {
+<pre><code>  it should "enable assertion of multiple messages received in specific order (using Seq)" in {
     echoService ! "hello"
     echoService ! "world"
     expectActor expectMultiple List("hello", "world")
@@ -73,8 +67,7 @@ expectMultiple (ordered)
 
 expectMultiple (unordered)
 --------------------------
-<pre><code>
-  it should "enable assertion of multiple messages received, regardless of order (using Set)" in {
+<pre><code>  it should "enable assertion of multiple messages received, regardless of order (using Set)" in {
     echoService ! "hello"
     echoService ! "world"
     expectActor ?* Set("hello", "world")
@@ -87,8 +80,7 @@ expectMultiple (unordered)
 
 expectAny
 ---------
-<pre><code>
-  it should "enable assertion of messages of a specific class" in {
+<pre><code>  it should "enable assertion of messages of a specific class" in {
     echoService ! "hello"
     expectActor expectAny classOf[String]
 
@@ -97,5 +89,4 @@ expectAny
     expectActor ?? classOf[String]
   }
 </code></pre>
-
 
