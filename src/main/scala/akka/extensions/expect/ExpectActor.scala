@@ -11,6 +11,8 @@ class UnexpectedMessageException(message: String) extends AkkaException(message)
 
 object ExpectActor {
   def nothing = new NoExpectation()
+  def inOrder(list: Any*) = MessageSeqExpectation(list.toList)
+  def anyOrder(list: Any*) = MessageSetExpectation(list.toSet)
 
   sealed trait Expectation {
     def requiredElements: Int
@@ -50,6 +52,9 @@ object ExpectActor {
     def ?(message: Any) = expect(message)
     def expect(message: Any) = doExpect(MessageSeqExpectation(message :: Nil))
     
+    def ?(expectation: Expectation) = expect(expectation)
+    def expect(expectation: Expectation) = doExpect(expectation)
+
     def ?*(messages: Seq[Any]) = expectMultiple(messages)
     def expectMultiple(messages: Seq[Any]) = doExpect(MessageSeqExpectation(messages))
 
