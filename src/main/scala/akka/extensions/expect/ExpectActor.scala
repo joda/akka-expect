@@ -13,6 +13,7 @@ object ExpectActor {
   def nothing = new NoExpectation()
   def inOrder(list: Any*) = MessageSeqExpectation(list.toList)
   def anyOrder(list: Any*) = MessageSetExpectation(list.toSet)
+  def noneOf(list: Any*) = Unexpectation(list.toList)
 
   sealed trait Expectation {
     def requiredElements: Int
@@ -40,7 +41,14 @@ object ExpectActor {
   case class NoExpectation() extends Expectation {
     def requiredElements = 1
     def assert(actual: Seq[_]) = throw new UnexpectedMessageException("Got unexpected message: " + actual.head)
-  }    
+  }
+
+  case class Unexpectation(expected: Seq[Any]) {
+    def assert(actual: Seq[_]) = {
+      val intersection = actual intersect expected
+      if (!intersection.isEmpty) throw new UnexpectedMessageException("Got unexpected messages: " + intersection)
+    }
+  }
 
   case class Reset()
   case class RespondWith(request: AnyRef, response: AnyRef)
@@ -49,11 +57,17 @@ object ExpectActor {
   
   implicit def actorRefExpect(me: ActorRef) = new {
 
+    val timeout = 500
+
     def ?(message: Any) = expect(message)
     def expect(message: Any) = doExpect(MessageSeqExpectation(message :: Nil))
     
     def ?(expectation: Expectation) = expect(expectation)
     def expect(expectation: Expectation) = doExpect(expectation)
+
+    def ?(unexpectation: Unexpectation) = expect(unexpectation)
+    def expect(unexpectation: Unexpectation) = expectNo(unexpectation)
+
 
     def ?*(messages: Seq[Any]) = expectMultiple(messages)
     def expectMultiple(messages: Seq[Any]) = doExpect(MessageSeqExpectation(messages))
@@ -64,16 +78,14 @@ object ExpectActor {
     def ??(expectedClass: Class[_]) = expectAny(expectedClass)
     def expectAny(expectedClass: Class[_]) = doExpect(AnyExpectation(expectedClass))
 
-    def !??(cls: Class[_ <: AnyRef]) = expectNo(null)
+    def !??(cls: Class[_ <: AnyRef]) = expectNo(null.asInstanceOf[AnyRef])
     def !?(message: AnyRef) = expectNo(message)
-    def expectNo(message: AnyRef) = {
-      try {
-        expect(message)
-        throw new UnexpectedMessageException("Got unexpected message: " + message)
-      } catch {
-        case e: ActorTimeoutException => {}
-        case t: Throwable => throw t
-      }
+    def expectNo(message: Any): Unit = expectNo(message :: Nil)
+    def expectNo(messages: Seq[Any]): Unit = expectNo(Unexpectation(messages))
+    def expectNo(unexpectation: Unexpectation): Unit = {
+      Thread.sleep(timeout)
+      val result = send2me(unexpectation)
+      result.asInstanceOf[Result].foreach(throw _)
     }
 
     def ?(expectation: NoExpectation) = expectNothing
@@ -93,7 +105,7 @@ object ExpectActor {
       }
     }
 
-    private def send2me(expectation: Expectation) = me.sendRequestReply(expectation, 500, me)
+    private def send2me(expectation: AnyRef) = me.sendRequestReply(expectation, timeout, me)
   }
 
 }
@@ -109,6 +121,7 @@ class ExpectActor extends Actor {
 
   def receive = {
     case expectation: Expectation => expect(expectation)
+    case unexpectation: Unexpectation => unexpect(unexpectation)
 
     case response: RespondWith =>
       responses = responses ++ List(response)
@@ -137,6 +150,17 @@ class ExpectActor extends Actor {
       become(expecting)
     } else {
       assertAndReply(expectation)
+    }
+  }
+
+  def unexpect(unexpectation: Unexpectation) = {
+    expector = self.senderFuture.get.asInstanceOf[CompletableFuture[Any]]
+    try {
+      unexpectation.assert(mq)
+      expector.completeWithResult(None)
+    }
+    catch {
+      case t: Throwable => expector.completeWithResult(Option(t))
     }
   }
 

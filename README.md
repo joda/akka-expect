@@ -33,6 +33,27 @@ expect
   }
 </code></pre>
 
+expectNo
+----------------
+<pre><code>  
+
+  it should "enable explicit assertion of specific messages that are not expected" in {
+    echoService ! "hola"
+    expectActor expectNo "hello"
+    expectActor expect "hola"
+
+    // !? is shorthand for timeout
+    echoService ! "hola"
+    expectActor !? "hello"
+    expectActor ? "hola"
+  }
+
+"ExpectActor" should "enable synchronous assertion of specific messages" in {
+    echoService ! "hello"
+    expectActor ? "hello"
+  }
+</code></pre>
+
 expectNothing
 -------------------
 <pre><code>  it should "enable explicit assertion of no messages of any kind" in {

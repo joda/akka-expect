@@ -57,14 +57,14 @@ class ExpectActorSpec extends FlatSpec with ShouldMatchers with BeforeAndAfterEa
   }
 
   it should "enable explicit assertion of specific messages that are not expected" in {
-    pending
-    // THINK: Maybe not eat messages in expectNo? Use discard to specifically eat messages?
     echoService ! "hola"
     expectActor expectNo "hello"
+    expectActor expect "hola"
 
-    // !? is shorthand for timeout
+    // you can use the regular expect with the noneOf qualifier
     echoService ! "hola"
-    expectActor !? "hello"
+    expectActor ? noneOf("hello")
+    expectActor ? "hola"
   }
 
   it should "raise an error when receiving an unexpected message" in {
