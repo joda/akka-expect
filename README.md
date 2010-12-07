@@ -33,6 +33,15 @@ expect
   }
 </code></pre>
 
+expectNo
+----------------
+<pre><code>  it should "enable explicit assertion of specific messages that are not expected" in {
+    echoService ! "hola"
+    expectActor ? noneOf("hello")
+    expectActor ? "hola"
+  }
+</code></pre>
+
 expectNothing
 -------------------
 <pre><code>  it should "enable explicit assertion of no messages of any kind" in {
