@@ -10,10 +10,11 @@ import org.junit.Assert._
 class UnexpectedMessageException(message: String) extends AkkaException(message)
 
 object ExpectActor {
-  def nothing = new NoExpectation()
+  def nothing = new ObjectUnexpectation(Nil)
   def inOrder(list: Any*) = MessageSeqExpectation(list.toList)
   def anyOrder(list: Any*) = MessageSetExpectation(list.toSet)
-  def noneOf(list: Any*) = Unexpectation(list.toList)
+  def noneOf(list: Any*) = ObjectUnexpectation(list.toList)
+  def noneOf(list: Class[_]*) = ClassUnexpectation(list.toList)
 
   sealed trait Expectation {
     def requiredElements: Int
@@ -38,14 +39,20 @@ object ExpectActor {
     def assert(actual: Seq[_]) = assertEquals(expectedClass, actual.head.asInstanceOf[AnyRef].getClass)
   }
 
-  case class NoExpectation() extends Expectation {
-    def requiredElements = 1
-    def assert(actual: Seq[_]) = throw new UnexpectedMessageException("Got unexpected message: " + actual.head)
+  sealed trait Unexpectation {
+    def assert(actual: Seq[_]): Unit
   }
 
-  case class Unexpectation(expected: Seq[Any]) {
+  case class ObjectUnexpectation(expected: Seq[Any]) extends Unexpectation {
     def assert(actual: Seq[_]) = {
       val intersection = actual intersect expected
+      if (!intersection.isEmpty) throw new UnexpectedMessageException("Got unexpected messages: " + intersection)
+    }
+  }
+
+  case class ClassUnexpectation(expected: Seq[Class[_]]) extends Unexpectation {
+    def assert(actual: Seq[_]) = {
+      val intersection = actual.asInstanceOf[Seq[AnyRef]].map(o => o.getClass) intersect expected
       if (!intersection.isEmpty) throw new UnexpectedMessageException("Got unexpected messages: " + intersection)
     }
   }
@@ -81,17 +88,13 @@ object ExpectActor {
     def !??(cls: Class[_ <: AnyRef]) = expectNo(null.asInstanceOf[AnyRef])
     def !?(message: AnyRef) = expectNo(message)
     def expectNo(message: Any): Unit = expectNo(message :: Nil)
-    def expectNo(messages: Seq[Any]): Unit = expectNo(Unexpectation(messages))
+    def expectNo(messages: Seq[Any]): Unit = expectNo(ObjectUnexpectation(messages))
     def expectNo(unexpectation: Unexpectation): Unit = {
       Thread.sleep(timeout)
       val result = send2me(unexpectation)
       result.asInstanceOf[Result].foreach(throw _)
     }
 
-    def ?(expectation: NoExpectation) = expectNothing
-    def expect(expectation: NoExpectation) = expectNothing
-    def expectNothing = doNotExpect(new NoExpectation())
-    
     private def doExpect(expectation: Expectation) = {
       val result = send2me(expectation)
       result.asInstanceOf[Result].foreach(throw _)

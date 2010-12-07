@@ -67,6 +67,13 @@ class ExpectActorSpec extends FlatSpec with ShouldMatchers with BeforeAndAfterEa
     expectActor ? "hola"
   }
 
+  it should "raise an error when receiving messages that are not wanted" in {
+    echoService ! "hello"
+    intercept [UnexpectedMessageException] {
+      expectActor ? noneOf(classOf[String])
+    }
+  }
+
   it should "raise an error when receiving an unexpected message" in {
     echoService ! "hello"
     intercept[UnexpectedMessageException] {
@@ -75,9 +82,6 @@ class ExpectActorSpec extends FlatSpec with ShouldMatchers with BeforeAndAfterEa
   }
 
   it should "enable explicit assertion of no messages of any kind" in {
-    discardService ! "hello"
-    expectActor.expectNothing
-
     discardService ! "hello"
     expectActor expect nothing
 
