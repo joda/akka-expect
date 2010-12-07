@@ -144,17 +144,13 @@ class ExpectActorSpec extends FlatSpec with ShouldMatchers with BeforeAndAfterEa
 
   it should "enable assertion of messages of a specific class" in {
     echoService ! "hello"
-    expectActor expectAny classOf[String]
-
-    // ?? is shorthande for expectAny
-    echoService ! "hello"
-    expectActor ?? classOf[String]
+    expectActor ? anyOf(classOf[String])
   }
 
   it should "raise an assertion error when expectAny receives a message of wrong type" in {
     echoService ! 42
     intercept [AssertionError] {
-      expectActor ?? classOf[String]
+      expectActor ? anyOf(classOf[String])
     }
   }
 

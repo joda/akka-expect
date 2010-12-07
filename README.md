@@ -72,7 +72,7 @@ expectAny
 ---------
 <pre><code>  it should "enable assertion of messages of a specific class" in {
     echoService ! "hello"
-    expectActor ?? classOf[String]
+    expectActor ? anyOf(classOf[String])
   }
 </code></pre>
 

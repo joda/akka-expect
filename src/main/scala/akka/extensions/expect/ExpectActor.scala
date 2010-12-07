@@ -15,6 +15,7 @@ object ExpectActor {
   def anyOrder(list: Any*) = MessageSetExpectation(list.toSet)
   def noneOf(list: Any*) = ObjectUnexpectation(list.toList)
   def noneOf(list: Class[_]*) = ClassUnexpectation(list.toList)
+  def anyOf(list: Class[_]*) = AnyExpectation(list.toList)
 
   sealed trait Expectation {
     def requiredElements: Int
@@ -34,9 +35,12 @@ object ExpectActor {
     def assert(actual: Seq[_]) = assertEquals(expected, actual.toSet)
   }
 
-  case class AnyExpectation(expectedClass: Class[_]) extends Expectation {
+  case class AnyExpectation(expectedClasses: Seq[Class[_]]) extends Expectation {
     def requiredElements = 1
-    def assert(actual: Seq[_]) = assertEquals(expectedClass, actual.head.asInstanceOf[AnyRef].getClass)
+    def assert(actual: Seq[_]) = {
+      val actualClasses = actual.asInstanceOf[Seq[AnyRef]].map(o => o.getClass)
+      assertEquals(expectedClasses, actualClasses)
+    }
   }
 
   sealed trait Unexpectation {
@@ -82,9 +86,6 @@ object ExpectActor {
     def ?*(messages: scala.collection.immutable.Set[_]) = expectMultiple(messages)
     def expectMultiple(messages: Set[_]) = doExpect(MessageSetExpectation(messages))
     
-    def ??(expectedClass: Class[_]) = expectAny(expectedClass)
-    def expectAny(expectedClass: Class[_]) = doExpect(AnyExpectation(expectedClass))
-
     def !??(cls: Class[_ <: AnyRef]) = expectNo(null.asInstanceOf[AnyRef])
     def !?(message: AnyRef) = expectNo(message)
     def expectNo(message: Any): Unit = expectNo(message :: Nil)
