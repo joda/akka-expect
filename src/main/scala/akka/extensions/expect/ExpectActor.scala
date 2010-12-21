@@ -139,7 +139,11 @@ class ExpectActor extends Actor {
     case message =>
       if (!responses.isEmpty) {
         if (message == responses.head.request) {
-          self.senderFuture.get.completeWithResult(responses.head.response)
+          if (self.senderFuture.isDefined)
+            self.senderFuture.get.completeWithResult(responses.head.response)
+          else if (self.sender.isDefined)
+            self.sender.get ! responses.head.response
+            
           responses = responses.tail
         }
       } else {
